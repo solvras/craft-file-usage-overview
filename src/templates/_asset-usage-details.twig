@@ -1,0 +1,16 @@
+<h3>{{'Used in'|t('assetusage')}}</h3>
+
+<div class="elementselect">
+	<div class="elements">
+		{% for element in elements %}
+			<a href="{{ element.cpEditUrl }}">
+				<div class="label">
+					<span class="title">{{element.elementTitle ?? ''}}</span>
+					{% if element.count is defined %}
+                    	<span class="used-count"> - Used {{ element.count }} {{ element.count == 1 ? 'time' : 'times' }}</span>
+                	{% endif %}
+				</div>
+			</a>
+		{% endfor %}
+	</div>
+</div>
