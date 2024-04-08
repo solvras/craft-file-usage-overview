@@ -13,8 +13,7 @@ use solvras\craftcraftfileusageoverview\services\AssetUsageService;
 class AssetUsageController extends Controller
 {
     public $defaultAction = 'index';
-    // protected array|int|bool $allowAnonymous = self::ALLOW_ANONYMOUS_NEVER;
-    protected $allowAnonymous = ['index', 'test'];
+    protected $allowAnonymous = ['index'];
 
     /**
      * file-usage-overview/asset-usage action
