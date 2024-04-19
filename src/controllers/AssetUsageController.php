@@ -13,7 +13,7 @@ use solvras\craftcraftfileusageoverview\services\AssetUsageService;
 class AssetUsageController extends Controller
 {
     public $defaultAction = 'index';
-    protected $allowAnonymous = ['index'];
+    protected $allowAnonymous = ['index', 'categories'];
 
     /**
      * file-usage-overview/asset-usage action
@@ -22,6 +22,14 @@ class AssetUsageController extends Controller
     {
         $assetUsageService = new AssetUsageService();
         $assetUsage = $assetUsageService->fetchFileLists();
+
+        return $this->asJson($assetUsage);
+    }
+
+    public function actionCategories(): Response
+    {
+        $assetUsageService = new AssetUsageService();
+        $assetUsage = $assetUsageService->fetchCategories();
 
         return $this->asJson($assetUsage);
     }
