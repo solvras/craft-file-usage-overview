@@ -291,7 +291,9 @@ class AssetUsageService extends Component
             ->from('{{%categories}} AS categories')
             ->innerJoin('{{%elements}} AS elements', 'categories.id = elements.id')
             ->innerJoin('{{%content}} AS content', 'elements.id = content.elementId')
+            ->innerJoin('{{%structureelements}} AS structureelements', 'elements.id = structureelements.elementId')
             ->where(['categories.groupId' => $groupCategory['id']])
+            ->orderBy(['structureelements.lft' => SORT_ASC])
             ->all();
         
         return $categories;
