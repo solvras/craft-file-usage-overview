@@ -246,7 +246,7 @@ class AssetUsageService extends Component
         $categories = $this->getAllCategories();
         foreach ($categories as $category) {
             $categoryUsage[] = [
-                'id' => $category['id'],
+                'id' => (int)$category['id'],
                 'categoryTitle' => $category['categoryTitle'],
                 'color' => $category['color'],
                 'usage' => 0,
