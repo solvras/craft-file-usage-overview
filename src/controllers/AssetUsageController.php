@@ -29,7 +29,7 @@ class AssetUsageController extends Controller
     public function actionCategories(): Response
     {
         $assetUsageService = new AssetUsageService();
-        $assetUsage = $assetUsageService->fetchCategories();
+        $assetUsage = $assetUsageService->fetchCategoriesInfo();
 
         return $this->asJson($assetUsage);
     }

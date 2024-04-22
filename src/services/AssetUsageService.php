@@ -235,7 +235,46 @@ class AssetUsageService extends Component
         return $entry->getIsDraft() || $entry->getIsRevision();
     }
 
-    public function fetchCategories(): array
+
+    /**
+     * Fetch categories
+     * @return array
+     */
+    public function fetchCategoriesInfo(): array
+    {
+        $categoryUsage = [];
+        $categories = $this->getAllCategories();
+        foreach ($categories as $category) {
+            $categoryUsage[] = [
+                'id' => $category['id'],
+                'categoryTitle' => $category['categoryTitle'],
+                'color' => $category['color'],
+                'usage' => 0,
+            ];
+        }
+        
+        $files = $this->fetchFileLists();
+        foreach ($files as $file) {
+            if ($file['documentCategory']) {
+                foreach ($file['documentCategory'] as $category) {
+                    foreach ($categoryUsage as &$categoryInfo) {
+                        if ($categoryInfo['categoryTitle'] === $category['title']) {
+                            $categoryInfo['usage']++;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $categoryUsage;
+    }
+
+    /**
+     * Get all categories
+     * @return array
+     */
+    private function getAllCategories() : array 
     {
         $groupCategory = (new Query())
             ->select(['id', 'handle'])
@@ -244,21 +283,15 @@ class AssetUsageService extends Component
             ->one();
         
         $categories = (new Query())
-            ->select(
-                [
-                    'categories.id',
-                    'content.title AS categoryTitle', 
-                    'COUNT(files.id) AS fileCount',
-                    'content.field_colorPicker_xriloahl AS color'
-                ]
-            )
+            ->select([
+                'categories.id',
+                'content.title AS categoryTitle',
+                'content.field_colorPicker_xriloahl AS color'
+            ])
             ->from('{{%categories}} AS categories')
             ->innerJoin('{{%elements}} AS elements', 'categories.id = elements.id')
             ->innerJoin('{{%content}} AS content', 'elements.id = content.elementId')
-            ->leftJoin('{{%relations}} AS relations', 'relations.targetId = elements.id')
-            ->leftJoin('{{%assets}} AS files', 'relations.sourceId = files.id')
             ->where(['categories.groupId' => $groupCategory['id']])
-            ->groupBy('categories.id')
             ->all();
         
         return $categories;
