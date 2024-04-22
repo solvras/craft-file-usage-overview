@@ -166,6 +166,16 @@ class AssetUsageService extends Component
                     if ($block->getType()->handle === 'filesList') {
                         $fileAssets = $block->fileAssets;
                         foreach ($fileAssets as $fileAsset) {
+
+                            $documentCategories = $fileAsset->documentCategory->all();
+                            $documentCategoryTitles = [];
+                            foreach ($documentCategories as $category) {
+                                $documentCategoryTitles[] = [
+                                    'id' => $category->id,
+                                    'title' => $category->title
+                                ];
+                            }
+
                             $files[] = [
                                 'entryId' => $entry->id,
                                 'entryTitle' => $entry->title,
@@ -176,6 +186,7 @@ class AssetUsageService extends Component
                                 'documentExtension' => $fileAsset->getExtension(),
                                 'documentSize' => $fileAsset->size,
                                 'dateChanged' => $fileAsset->dateModified->format('Y-m-d H:i:s'),
+                                'documentCategory' => $documentCategoryTitles ?: null,                      
                             ];
                         }
                     }
@@ -222,5 +233,34 @@ class AssetUsageService extends Component
     private function isDraftOrRevision(Entry $entry): bool
     {
         return $entry->getIsDraft() || $entry->getIsRevision();
+    }
+
+    public function fetchCategories(): array
+    {
+        $groupCategory = (new Query())
+            ->select(['id', 'handle'])
+            ->from('{{%categorygroups}}')
+            ->where(['handle' => 'documentCategories'])
+            ->one();
+        
+        $categories = (new Query())
+            ->select(
+                [
+                    'categories.id',
+                    'content.title AS categoryTitle', 
+                    'COUNT(files.id) AS fileCount',
+                    'content.field_colorPicker_xriloahl AS color'
+                ]
+            )
+            ->from('{{%categories}} AS categories')
+            ->innerJoin('{{%elements}} AS elements', 'categories.id = elements.id')
+            ->innerJoin('{{%content}} AS content', 'elements.id = content.elementId')
+            ->leftJoin('{{%relations}} AS relations', 'relations.targetId = elements.id')
+            ->leftJoin('{{%assets}} AS files', 'relations.sourceId = files.id')
+            ->where(['categories.groupId' => $groupCategory['id']])
+            ->groupBy('categories.id')
+            ->all();
+        
+        return $categories;
     }
 }
