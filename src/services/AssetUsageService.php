@@ -248,7 +248,8 @@ class AssetUsageService extends Component
                 [
                     'categories.id',
                     'content.title AS categoryTitle', 
-                    'COUNT(files.id) AS fileCount'
+                    'COUNT(files.id) AS fileCount',
+                    'content.field_colorPicker_xriloahl AS color'
                 ]
             )
             ->from('{{%categories}} AS categories')
