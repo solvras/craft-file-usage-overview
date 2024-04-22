@@ -1,7 +1,7 @@
 {
     "name": "solvr-as/craft-file-usage-overview",
     "type": "craft-plugin",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "license": "mit",
     "support": {
         "email": "utviklere@solvr.no"
