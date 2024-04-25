@@ -10,15 +10,18 @@ use yii\base\Event;
 use craft\elements\Asset;
 use craft\events\DefineElementEditorHtmlEvent;
 use craft\events\RegisterElementTableAttributesEvent;
-use craft\events\SetElementTableAttributeHtmlEvent;
+use craft\events\DefineAttributeHtmlEvent;
 use craft\controllers\ElementsController;
 use craft\elements\Entry;
+use craft\events\ModelEvent;
 use craft\services\Elements;
 use craft\redactor\Field as Redactor;
+use craft\ckeditor\Field as CkEditor;
 use craft\fields\Matrix;
 use craft\web\View;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\events\RegisterTemplateRootsEvent;
+use \craft\fieldlayoutelements\CustomField;
 
 /**
  * craft-file-usage-overview plugin
@@ -32,7 +35,7 @@ use craft\events\RegisterTemplateRootsEvent;
  */
 class FileUsageOverview extends Plugin
 {
-    public $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.0.0';
 
     public static function config(): array
     {
@@ -65,18 +68,12 @@ class FileUsageOverview extends Plugin
             Elements::EVENT_AFTER_SAVE_ELEMENT,
             function ($event) {
                 $element = $event->element;
-
-                // Check if the element is an entry
                 if ($element instanceof Entry) {
                     $entryId = $element->canonicalId;
-
-                    // Fetch all Redactor fields in the entry
-                    $redactorFields = $this->findRedactorFields($element);
+                    $redactorFields = $this->findCkEditorFields($element);
                     foreach ($redactorFields as $field) {
-                        if (!empty($field->text) && is_object($field->text)) {
-                            $results = $this->extractIds($field->text->getRawContent());
-                        }
-
+                        $content = $element->{$field->handle}->getRawContent();
+                        $results = $this->extractIds($content);
                         if (!empty($results)) {
                             foreach ($results as $key => $result) {
                                 $this->assetUsageService->saveRedactorRelation($entryId, $result['assetId'], $result['siteId']);
@@ -99,7 +96,7 @@ class FileUsageOverview extends Plugin
             ];
         });
 
-        Event::on(Asset::class, Asset::EVENT_SET_TABLE_ATTRIBUTE_HTML, function (SetElementTableAttributeHtmlEvent $event) {
+        Event::on(Asset::class, Asset::EVENT_DEFINE_ATTRIBUTE_HTML, function (DefineAttributeHtmlEvent $event) {
             if ($event->attribute === 'usage') {
                 /** @var Asset $asset */
                 $asset = $event->sender;
@@ -115,37 +112,35 @@ class FileUsageOverview extends Plugin
      * @param Entry $entry
      * @return array
      */
-    public static function findRedactorFields(Entry $entry): array
+    public static function findCkEditorFields(Entry $entry): array
     {
-        $redactorFields = [];
+        $ckeditorFields = [];
         $fieldLayout = $entry->getFieldLayout();
 
-        // Loop through all fields in the field layout
-        foreach ($fieldLayout->getFields() as $field) {
-            if ($field instanceof Redactor) {
-                $redactorFields[] = $field;
-            } elseif ($field instanceof Matrix) {
-                $blocks = $entry->getFieldValue($field->handle)->all();
-                
-                foreach ($blocks as $block) {
-                    $redactorFields[] = $block;
+        foreach ($fieldLayout->getTabs() as $tab) {
+            foreach ($tab->getElements() as $element) {
+                if ($element instanceof CustomField) {
+                    $field = $element->getField();
+                    if ($field instanceof CkEditor) {
+                        $ckeditorFields[] = $field;
+                    }
                 }
             }
         }
 
-        return $redactorFields;
+        return $ckeditorFields;
     }
 
     /**
      * Extract asset IDs from Redactor content
-     * @param string $redactorContent
+     * @param string $ckEditorContent
      * @return array
      */
-    public static function extractIds(string $redactorContent): array
+    public static function extractIds(string $ckEditorContent): array
     {
         $assetIds = [];
         $siteIds = [];
-        preg_match_all('/{asset:(\d+)@(\d+):url\|\|([^}]+)}/', $redactorContent, $matches);
+        preg_match_all('/{asset:(\d+)@(\d+):url\|\|([^}]+)}/', $ckEditorContent, $matches);
 
         if (!empty($matches[1])) {
             $assetIds = array_map('intval', $matches[1]);
@@ -163,23 +158,17 @@ class FileUsageOverview extends Plugin
     private function registerTemplate()
     {
         Event::on(
-            View::class, 
-            View::EVENT_REGISTER_SITE_TEMPLATE_ROOTS, 
-            function (RegisterTemplateRootsEvent $event) {
-                if (is_dir($baseDir = $this->getBasePath() . DIRECTORY_SEPARATOR . 'templates')) {
-                    $event->roots['file-usage-overview'] = $baseDir;
+            ElementsController::class,
+            ElementsController::EVENT_DEFINE_EDITOR_CONTENT,
+            function (DefineElementEditorHtmlEvent $event) {
+                if ($event->element instanceof Asset) {
+                    /** @var Asset */
+                    $asset = $event->element;
+                    $event->html .= Craft::$app->getView()->renderTemplate('file-usage-overview/_asset-usage-details', [
+                        'elements' => $this->assetUsageService->getUsedIn($asset),
+                    ]);
                 }
-            }
-        );
+            });
 
-        Craft::$app->getView()->hook('cp.assets.edit.content', function(array &$context) {
-            $templatePath = 'file-usage-overview/_asset-usage-details';
-            $elements = $this->assetUsageService->getUsedIn($context['element']);
-            $html = Craft::$app->view->renderTemplate(
-                $templatePath, ['elements' => $elements], Craft::$app->view::TEMPLATE_MODE_CP
-            );
-
-            return $html;
-        });
     }
 }

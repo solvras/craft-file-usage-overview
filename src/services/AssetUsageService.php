@@ -133,16 +133,19 @@ class AssetUsageService extends Component
                 'assetId' => $assetId
             ])
             ->one();
+
         if ($existingRecord !== null) {
             $existingRecord->entryId = $entryId;
             $existingRecord->assetId = $assetId;
             $existingRecord->entrySiteId = $siteId;
+            $existingRecord->dateUpdated = new \DateTime();
             $existingRecord->update();
         } else {
-            $redactorRelationsRecord = new AssetsUsage();
-            $redactorRelationsRecord->assetId = $assetId;
-            $redactorRelationsRecord->entryId = $entryId;
-            $redactorRelationsRecord->entrySiteId = $siteId;
+            $redactorRelationsRecord = new AssetsUsage([
+                'assetId' => $assetId,
+                'entryId' => $entryId,
+                'entrySiteId' => $siteId,
+            ]);
             $redactorRelationsRecord->save();
         }
     }
