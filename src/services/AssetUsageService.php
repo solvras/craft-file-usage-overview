@@ -10,6 +10,7 @@ use craft\db\Query;
 use craft\db\Table;
 use craft\helpers\ElementHelper;
 use solvras\craftcraftfileusageoverview\records\AssetsUsage;
+use craft\elements\Category;
 
 /**
  * Asset Usage Service service
@@ -247,8 +248,8 @@ class AssetUsageService extends Component
         foreach ($categories as $category) {
             $categoryUsage[] = [
                 'id' => (int)$category['id'],
-                'categoryTitle' => $category['categoryTitle'],
-                'color' => $category['color'],
+                'categoryTitle' => $category['title'],
+                'color' => $category['colorPicker'] ? $category['colorPicker']->getHex() : null,
                 'usage' => 0,
             ];
         }
@@ -275,25 +276,9 @@ class AssetUsageService extends Component
      * @return array
      */
     private function getAllCategories() : array 
-    {
-        $groupCategory = (new Query())
-            ->select(['id', 'handle'])
-            ->from('{{%categorygroups}}')
-            ->where(['handle' => 'documentCategories'])
-            ->one();
-        
-        $categories = (new Query())
-            ->select([
-                'categories.id',
-                'content.title AS categoryTitle',
-                'content.field_colorPicker_xriloahl AS color'
-            ])
-            ->from('{{%categories}} AS categories')
-            ->innerJoin('{{%elements}} AS elements', 'categories.id = elements.id')
-            ->innerJoin('{{%content}} AS content', 'elements.id = content.elementId')
-            ->innerJoin('{{%structureelements}} AS structureelements', 'elements.id = structureelements.elementId')
-            ->where(['categories.groupId' => $groupCategory['id']])
-            ->orderBy(['structureelements.lft' => SORT_ASC])
+    {    
+        $categories = Category::find()
+            ->group('documentCategories')
             ->all();
         
         return $categories;
