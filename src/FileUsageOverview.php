@@ -32,7 +32,7 @@ use craft\events\RegisterTemplateRootsEvent;
  */
 class FileUsageOverview extends Plugin
 {
-    public $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.0.0';
 
     public static function config(): array
     {
@@ -121,7 +121,7 @@ class FileUsageOverview extends Plugin
         $fieldLayout = $entry->getFieldLayout();
 
         // Loop through all fields in the field layout
-        foreach ($fieldLayout->getFields() as $field) {
+        foreach ($fieldLayout->getCustomFields() as $field) {
             if ($field instanceof Redactor) {
                 $redactorFields[] = $field;
             } elseif ($field instanceof Matrix) {
