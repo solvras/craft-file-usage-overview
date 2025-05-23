@@ -172,6 +172,8 @@ class FileUsageOverview extends Plugin
             }
         );
 
+        // Assets template hook not available on Craft 4
+        // https://craftcms.com/docs/4.x/extend/template-hooks.html#control-panel-template-hooks
         Craft::$app->getView()->hook('cp.assets.edit.content', function(array &$context) {
             $templatePath = 'file-usage-overview/_asset-usage-details';
             $elements = $this->assetUsageService->getUsedIn($context['element']);
