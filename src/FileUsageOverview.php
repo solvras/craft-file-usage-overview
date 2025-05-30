@@ -10,7 +10,8 @@ use yii\base\Event;
 use craft\elements\Asset;
 use craft\events\DefineElementEditorHtmlEvent;
 use craft\events\RegisterElementTableAttributesEvent;
-use craft\events\SetElementTableAttributeHtmlEvent;
+// use craft\events\SetElementTableAttributeHtmlEvent;
+use craft\events\DefineAttributeHtmlEvent;
 use craft\controllers\ElementsController;
 use craft\elements\Entry;
 use craft\services\Elements;
@@ -99,7 +100,7 @@ class FileUsageOverview extends Plugin
             ];
         });
 
-        Event::on(Asset::class, Asset::EVENT_SET_TABLE_ATTRIBUTE_HTML, function (SetElementTableAttributeHtmlEvent $event) {
+        Event::on(Asset::class, Asset::EVENT_DEFINE_ATTRIBUTE_HTML, function (DefineAttributeHtmlEvent $event) {
             if ($event->attribute === 'usage') {
                 /** @var Asset $asset */
                 $asset = $event->sender;
